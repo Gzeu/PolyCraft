@@ -37,13 +37,21 @@
 
 **Craft the Future with AI-Powered Multi-Modal Generation**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-13.4+-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+### Core Capabilities
+- **AI Content Mix & Match** - Seamlessly combine text, images, audio, and video generation
+- **Smart Content Collections** - Organize and remix projects with AI-powered suggestions
+- **Live Collaboration** - Real-time co-creation with team members and AI agents
+- **AI Style Market** - Create, share, and apply custom AI styles across content types
+- **Multi-Agent System** - Harness multiple AI agents working in parallel
 
-![PolyCraft Dashboard](https://via.placeholder.com/1200x600/1a202c/ffffff?text=PolyCraft+AI+Platform)
+### Technical Highlights
+- 🚀 **Next.js 13+** with App Router
+- ⚡ **FastAPI** backend with async support
+- 🎨 **Tailwind CSS** with dark mode
+- 🔄 **Real-time** collaboration features
+- 🧩 **Modular** architecture for easy extension
+
+[![PolyCraft Dashboard](https://via.placeholder.com/1200x600/1a202c/ffffff?text=PolyCraft+AI+Platform)](https://github.com/Gzeu/PolyCraft)
 
 </div>
 
