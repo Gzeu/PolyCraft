@@ -1,0 +1,6 @@
+fastapi==0.68.0
+uvicorn==0.15.0
+python-dotenv==0.19.0
+pollinations==4.5.1
+httpx==0.28.1
+slowapi==0.1.9
