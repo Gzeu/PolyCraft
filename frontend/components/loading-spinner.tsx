@@ -24,3 +24,44 @@ export function LoadingSpinner({ className, size = "md", ...props }: LoadingSpin
     </div>
   )
 }
+
+// Alternative loading animation
+export function LoadingDots({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("loading-dots", className)} {...props}>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  )
+}
+
+// Pulse loading animation
+export function LoadingPulse({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div 
+      className={cn(
+        "w-full h-32 bg-muted rounded-lg animate-pulse", 
+        className
+      )} 
+      {...props} 
+    />
+  )
+}
+
+// Shimmer loading effect
+export function LoadingShimmer({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div 
+      className={cn(
+        "relative overflow-hidden bg-muted rounded-lg",
+        "before:absolute before:inset-0 before:-translate-x-full",
+        "before:animate-shimmer before:bg-gradient-to-r", 
+        "before:from-transparent before:via-white/10 before:to-transparent",
+        className
+      )} 
+      {...props} 
+    />
+  )
+}

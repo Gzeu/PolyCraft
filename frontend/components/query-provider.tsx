@@ -10,13 +10,34 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
+            staleTime: 60 * 1000, // 1 minute
+            gcTime: 5 * 60 * 1000, // 5 minutes
             refetchOnWindowFocus: false,
             retry: (failureCount, error: any) => {
-              if (error?.status === 404) return false
-              if (error?.status >= 500) return failureCount < 2
-              if (failureCount < 3) return true
-              return false
+              // Don't retry on 4xx errors except 408, 429
+              if (error?.status >= 400 && error?.status < 500) {
+                if (error.status === 408 || error.status === 429) {
+                  return failureCount < 2
+                }
+                return false
+              }
+              // Retry on 5xx errors up to 3 times
+              if (error?.status >= 500) {
+                return failureCount < 3
+              }
+              // General retry logic
+              return failureCount < 3
+            },
+            retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+          },
+          mutations: {
+            retry: (failureCount, error: any) => {
+              // Don't retry mutations on client errors
+              if (error?.status >= 400 && error?.status < 500) {
+                return false
+              }
+              // Retry on network errors
+              return failureCount < 2
             },
           },
         },
@@ -26,7 +47,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {process.env.NODE_ENV === 'development' && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   )
 }
