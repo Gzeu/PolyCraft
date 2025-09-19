@@ -1,20 +1,20 @@
 {
-  "name": "polycraft",
   "version": 2,
-  "public": true,
-  "github": {
-    "enabled": true,
-    "autoAlias": true
-  },
+  "regions": ["fra1"],
+  "framework": "nextjs",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/.next",
   "installCommand": "cd frontend && npm install",
-  "devCommand": "cd frontend && npm run dev",
-  "framework": "nextjs",
-  "regions": ["iad1", "sfo1"],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
   "functions": {
-    "frontend/app/**": {
-      "maxDuration": 30
+    "frontend/app/**/*.js": {
+      "runtime": "nodejs20.x",
+      "maxDuration": 15
     }
   },
   "headers": [
@@ -26,61 +26,21 @@
           "value": "nosniff"
         },
         {
-          "key": "X-Frame-Options",
+          "key": "X-Frame-Options", 
           "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
         },
         {
           "key": "Referrer-Policy",
           "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "geolocation=(), microphone=(), camera=()"
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
         }
       ]
     }
   ],
   "redirects": [
     {
-      "source": "/docs",
-      "destination": "https://github.com/Gzeu/PolyCraft#readme",
-      "permanent": false
-    },
-    {
       "source": "/github",
       "destination": "https://github.com/Gzeu/PolyCraft",
       "permanent": false
     }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_TELEMETRY_DISABLED": "1"
-  },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_APP_NAME": "PolyCraft",
-      "NODE_ENV": "production"
-    }
-  }
+  ]
 }
