@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,12 +15,35 @@ import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LoadingSpinner } from '@/components/loading-spinner'
 import { GenerationResult } from '@/components/generation-result'
+import { Header } from '@/components/header'
 import { useGeneration } from '@/hooks/use-generation'
-import { ImageIcon, TypeIcon, AudioLines, Sparkles, Wand2, Zap } from 'lucide-react'
+import { ImageIcon, TypeIcon, AudioLines, Sparkles, Wand2, Zap, Github } from 'lucide-react'
+import Link from 'next/link'
+
+const EXAMPLE_PROMPTS = {
+  image: [
+    "A futuristic city skyline at sunset with flying cars",
+    "A magical forest with glowing mushrooms and fairy lights",
+    "A steampunk robot reading a book in a library",
+    "An underwater palace made of coral and pearls",
+  ],
+  text: [
+    "Write a short story about time travel",
+    "Explain quantum computing in simple terms",
+    "Create a recipe for happiness",
+    "Describe the perfect day from a cat's perspective",
+  ],
+  audio: [
+    "Hello, welcome to PolyCraft!",
+    "The future of AI is here",
+    "Creativity meets technology",
+    "Your imagination, powered by AI",
+  ],
+}
 
 export default function HomePage() {
   const [prompt, setPrompt] = useState('')
-  const [selectedTab, setSelectedTab] = useState('image')
+  const [selectedTab, setSelectedTab] = useState<'image' | 'text' | 'audio'>('image')
   const [imageParams, setImageParams] = useState({
     model: 'flux',
     width: 1024,
@@ -47,31 +70,17 @@ export default function HomePage() {
     await generateContent(selectedTab, prompt, params)
   }
 
+  const handleExamplePrompt = (examplePrompt: string) => {
+    setPrompt(examplePrompt)
+  }
+
+  const generateRandomSeed = () => {
+    setImageParams(prev => ({ ...prev, seed: Math.floor(Math.random() * 1000000) }))
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">PolyCraft</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Multi-Modal Generation</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="hidden sm:inline-flex">
-                <Zap className="w-3 h-3 mr-1" />
-                Powered by Pollinations AI
-              </Badge>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
@@ -79,35 +88,74 @@ export default function HomePage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-6xl mx-auto"
+          className="max-w-7xl mx-auto"
         >
           {/* Hero Section */}
           <div className="text-center mb-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
-              className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+              className="mb-6"
             >
-              Craft the Future
-            </motion.h2>
-            <motion.p
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Powered by Pollinations AI</span>
+              </div>
+            </motion.div>
+            
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+              className="text-4xl md:text-6xl lg:text-7xl font-bold mb-4 text-gradient"
+            >
+              Craft the Future
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
             >
               Generate stunning images, compelling text, and natural audio with cutting-edge AI technology.
+              <br className="hidden md:block" />
               All in one unified platform.
             </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span>Live</span>
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <span>Free to use</span>
+                <Separator orientation="vertical" className="h-4" />
+                <Link 
+                  href="https://github.com/Gzeu/PolyCraft" 
+                  target="_blank" 
+                  className="flex items-center gap-1 hover:text-foreground transition-colors"
+                >
+                  <Github className="w-3 h-3" />
+                  Open Source
+                </Link>
+              </div>
+            </motion.div>
           </div>
 
           {/* Generation Interface */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="grid lg:grid-cols-2 gap-8"
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto"
           >
             {/* Generation Panel */}
             <Card className="glass-effect">
@@ -122,7 +170,7 @@ export default function HomePage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Generation Type Tabs */}
-                <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+                <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'image' | 'text' | 'audio')}>
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="image" className="flex items-center gap-2">
                       <ImageIcon className="w-4 h-4" />
@@ -140,14 +188,37 @@ export default function HomePage() {
 
                   {/* Prompt Input */}
                   <div className="space-y-2">
-                    <Label htmlFor="prompt">Prompt</Label>
+                    <Label htmlFor="prompt" className="flex items-center justify-between">
+                      <span>Prompt</span>
+                      <span className="text-xs text-muted-foreground">
+                        {prompt.length}/1000
+                      </span>
+                    </Label>
                     <Textarea
                       id="prompt"
                       placeholder={`Enter your ${selectedTab} generation prompt...`}
                       value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      className="min-h-[100px] resize-none"
+                      onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
+                      className="min-h-[120px] resize-none"
                     />
+                    
+                    {/* Example Prompts */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">Example prompts:</Label>
+                      <div className="flex flex-wrap gap-1">
+                        {EXAMPLE_PROMPTS[selectedTab].slice(0, 2).map((example, index) => (
+                          <Button
+                            key={index}
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                            onClick={() => handleExamplePrompt(example)}
+                          >
+                            {example.length > 40 ? `${example.slice(0, 40)}...` : example}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Image Parameters */}
@@ -160,23 +231,33 @@ export default function HomePage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="flux">Flux</SelectItem>
+                            <SelectItem value="flux">Flux (Recommended)</SelectItem>
                             <SelectItem value="dreamshaper">DreamShaper</SelectItem>
                             <SelectItem value="deliberate">Deliberate</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Seed (Optional)</Label>
+                        <Label className="flex items-center justify-between">
+                          <span>Seed</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={generateRandomSeed}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Random
+                          </Button>
+                        </Label>
                         <Textarea
-                          placeholder="Random seed"
+                          placeholder="Optional"
                           value={imageParams.seed || ''}
-                          onChange={(e) => setImageParams(prev => ({ ...prev, seed: e.target.value ? parseInt(e.target.value) : undefined }))}
+                          onChange={(e) => setImageParams(prev => ({ ...prev, seed: e.target.value ? parseInt(e.target.value) || undefined : undefined }))}
                           className="h-10 resize-none"
                         />
                       </div>
                     </div>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Width: {imageParams.width}px</Label>
                         <Slider
@@ -205,7 +286,7 @@ export default function HomePage() {
                           checked={imageParams.nologo}
                           onCheckedChange={(checked) => setImageParams(prev => ({ ...prev, nologo: checked }))}
                         />
-                        <Label htmlFor="nologo">Remove Logo</Label>
+                        <Label htmlFor="nologo" className="text-sm">Remove Logo</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Switch
@@ -213,8 +294,21 @@ export default function HomePage() {
                           checked={imageParams.private}
                           onCheckedChange={(checked) => setImageParams(prev => ({ ...prev, private: checked }))}
                         />
-                        <Label htmlFor="private">Private</Label>
+                        <Label htmlFor="private" className="text-sm">Private</Label>
                       </div>
+                    </div>
+                  </TabsContent>
+
+                  {/* Text Parameters */}
+                  <TabsContent value="text" className="space-y-4">
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        <span className="text-sm font-medium">Development Mode</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Text generation is currently in development. You'll receive a placeholder response while we work on integrating advanced text generation capabilities.
+                      </p>
                     </div>
                   </TabsContent>
 
@@ -228,12 +322,12 @@ export default function HomePage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="alloy">Alloy</SelectItem>
-                            <SelectItem value="echo">Echo</SelectItem>
-                            <SelectItem value="fable">Fable</SelectItem>
-                            <SelectItem value="onyx">Onyx</SelectItem>
-                            <SelectItem value="nova">Nova</SelectItem>
-                            <SelectItem value="shimmer">Shimmer</SelectItem>
+                            <SelectItem value="alloy">Alloy (Neutral)</SelectItem>
+                            <SelectItem value="echo">Echo (Male)</SelectItem>
+                            <SelectItem value="fable">Fable (British)</SelectItem>
+                            <SelectItem value="onyx">Onyx (Deep)</SelectItem>
+                            <SelectItem value="nova">Nova (Female)</SelectItem>
+                            <SelectItem value="shimmer">Shimmer (Soft)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -259,7 +353,22 @@ export default function HomePage() {
                         max={4.0}
                         min={0.25}
                         step={0.25}
+                        className="w-full"
                       />
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>0.25x</span>
+                        <span>1.0x</span>
+                        <span>4.0x</span>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        <span className="text-sm font-medium">Development Mode</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Audio generation is in development. The interface is ready, but audio synthesis capabilities are being implemented.
+                      </p>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -276,7 +385,7 @@ export default function HomePage() {
                   {isLoading ? (
                     <>
                       <LoadingSpinner className="w-5 h-5 mr-2" />
-                      Generating...
+                      Generating {selectedTab}...
                     </>
                   ) : (
                     <>
@@ -291,7 +400,14 @@ export default function HomePage() {
             {/* Results Panel */}
             <Card className="glass-effect">
               <CardHeader>
-                <CardTitle>Generated Content</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Generated Content</span>
+                  {result && (
+                    <Badge variant="secondary" className="capitalize">
+                      {selectedTab}
+                    </Badge>
+                  )}
+                </CardTitle>
                 <CardDescription>
                   Your AI-generated content will appear here
                 </CardDescription>

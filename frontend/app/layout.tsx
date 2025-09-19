@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'PolyCraft - AI-Powered Multi-Modal Generation',
   description: 'Craft the Future with AI-Powered Multi-Modal Generation. Create text, images, and audio with cutting-edge AI technology.',
-  keywords: ['AI', 'generation', 'multi-modal', 'text', 'image', 'audio', 'pollinations'],
+  keywords: ['AI', 'generation', 'multi-modal', 'text', 'image', 'audio', 'pollinations', 'artificial intelligence'],
   authors: [{ name: 'PolyCraft Team' }],
   creator: 'PolyCraft',
   publisher: 'PolyCraft',
@@ -40,6 +40,7 @@ export const metadata: Metadata = {
     title: 'PolyCraft - AI-Powered Multi-Modal Generation',
     description: 'Craft the Future with AI-Powered Multi-Modal Generation',
     images: ['/og-image.png'],
+    creator: '@polycraft_ai',
   },
   robots: {
     index: true,
@@ -55,6 +56,7 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
+  category: 'technology',
 }
 
 export default function RootLayout({
@@ -69,10 +71,12 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="dark"
           enableSystem
-          disableTransitionOnChange
+          disableTransitionOnChange={false}
         >
           <QueryProvider>
-            {children}
+            <div className="relative flex min-h-screen flex-col">
+              {children}
+            </div>
             <Toaster />
           </QueryProvider>
         </ThemeProvider>
