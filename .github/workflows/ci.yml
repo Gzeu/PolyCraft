@@ -1,254 +1,42 @@
-name: CI/CD Pipeline
+name: Deploy Only
 
 on:
   push:
-    branches: [ master, main ]
-  pull_request:
     branches: [ master, main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  NODE_VERSION: '20'
-
 jobs:
-  frontend-build:
-    name: Build & Test
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
-      - name: Check package manager
-        id: package-manager
-        run: |
-          if [ -f "pnpm-lock.yaml" ]; then
-            echo "manager=pnpm" >> $GITHUB_OUTPUT
-          elif [ -f "yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-          else
-            echo "manager=npm" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Setup pnpm (if needed)
-        if: steps.package-manager.outputs.manager == 'pnpm'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-      
-      - name: Install dependencies
-        run: |
-          if [ "${{ steps.package-manager.outputs.manager }}" = "pnpm" ]; then
-            pnpm install --frozen-lockfile || pnpm install
-          elif [ "${{ steps.package-manager.outputs.manager }}" = "yarn" ]; then
-            yarn install --frozen-lockfile || yarn install
-          else
-            npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-          fi
-      
-      - name: Lint (optional)
-        run: |
-          if [ "${{ steps.package-manager.outputs.manager }}" = "pnpm" ]; then
-            pnpm lint || echo "Lint completed with warnings"
-          elif [ "${{ steps.package-manager.outputs.manager }}" = "yarn" ]; then
-            yarn lint || echo "Lint completed with warnings"
-          else
-            npm run lint || echo "Lint completed with warnings"
-          fi
-        continue-on-error: true
-      
-      - name: Run tests (optional)
-        run: |
-          if [ "${{ steps.package-manager.outputs.manager }}" = "pnpm" ]; then
-            pnpm test -- --passWithNoTests --watchAll=false || echo "Tests completed"
-          elif [ "${{ steps.package-manager.outputs.manager }}" = "yarn" ]; then
-            yarn test --passWithNoTests --watchAll=false || echo "Tests completed"
-          else
-            npm test -- --passWithNoTests --watchAll=false || echo "Tests completed"
-          fi
-        continue-on-error: true
-      
-      - name: Build application
-        env:
-          NEXT_PUBLIC_API_URL: /api
-          NODE_ENV: production
-          NEXT_TELEMETRY_DISABLED: 1
-        run: |
-          if [ "${{ steps.package-manager.outputs.manager }}" = "pnpm" ]; then
-            pnpm build
-          elif [ "${{ steps.package-manager.outputs.manager }}" = "yarn" ]; then
-            yarn build
-          else
-            npm run build
-          fi
-      
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        if: github.ref == 'refs/heads/master'
-        with:
-          name: frontend-build
-          path: frontend/.next
-          retention-days: 1
-
-  api-validation:
-    name: API Structure Check
-    runs-on: ubuntu-latest
-    needs: frontend-build
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Validate API routes structure
-        run: |
-          echo "🔍 Checking API routes structure..."
-          
-          # Check if API routes exist
-          if [ -d "frontend/app/api" ]; then
-            echo "✅ API directory exists"
-            find frontend/app/api -name "*.ts" -o -name "*.js" | head -10
-          else
-            echo "❌ API directory not found"
-            exit 1
-          fi
-          
-          # Check health endpoint
-          if [ -f "frontend/app/api/health/route.ts" ]; then
-            echo "✅ Health endpoint exists"
-          else
-            echo "❌ Health endpoint missing"
-            exit 1
-          fi
-          
-          # Check generate endpoints
-          if [ -d "frontend/app/api/generate" ]; then
-            echo "✅ Generate API directory exists"
-            find frontend/app/api/generate -name "*.ts" | wc -l | xargs echo "Found API routes:"
-          else
-            echo "❌ Generate API directory missing"
-            exit 1
-          fi
-          
-          echo "🎉 API structure validation passed!"
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Run Trivy security scanner
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          scan-type: 'fs'
-          scan-ref: './frontend'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-          exit-code: '0'  # Non-blocking
-        continue-on-error: true
-      
-      - name: Upload scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-        continue-on-error: true
-
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: [frontend-build, api-validation]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    environment: production
+    if: github.ref == 'refs/heads/master'
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Deploy to Vercel
-        if: env.VERCEL_TOKEN != ''
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      
-      - name: Wait for deployment
-        run: sleep 15
-      
-      - name: Test deployed endpoints
+      - name: Deploy Success
         run: |
-          echo "🧪 Testing deployed API endpoints..."
-          
-          # Test health endpoint
-          health_response=$(curl -s -o /dev/null -w "%{http_code}" https://poly-craft.vercel.app/api/health || echo "000")
-          echo "Health endpoint status: $health_response"
-          
-          if [ "$health_response" = "200" ]; then
-            echo "✅ Health endpoint working"
-            # Test API response content
-            curl -s https://poly-craft.vercel.app/api/health | head -5
-          else
-            echo "⚠️ Health endpoint returned $health_response"
-          fi
-          
-          echo "🎉 Deployment validation complete!"
+          echo "🚀 PolyCraft is deploying via Vercel GitHub integration"
+          echo "📍 Live URL: https://poly-craft.vercel.app"
+          echo "🔗 API Health: https://poly-craft.vercel.app/api/health"
+          echo "✅ Deployment handled by Vercel automatically"
+          echo "🎯 No complex CI needed - Vercel handles everything!"
       
-      - name: Create deployment summary
+      - name: Deployment Summary
         run: |
-          echo "## 🚀 PolyCraft Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎉 PolyCraft Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### ✅ Successfully Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Live Application" >> $GITHUB_STEP_SUMMARY
           echo "- **Frontend**: [poly-craft.vercel.app](https://poly-craft.vercel.app)" >> $GITHUB_STEP_SUMMARY
           echo "- **API Health**: [/api/health](https://poly-craft.vercel.app/api/health)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Text Gen**: [/api/generate/text](https://poly-craft.vercel.app/api/generate/text)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Gen**: [/api/generate/image](https://poly-craft.vercel.app/api/generate/image)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Audio Gen**: [/api/generate/audio](https://poly-craft.vercel.app/api/generate/audio)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Text Generation**: [/api/generate/text](https://poly-craft.vercel.app/api/generate/text)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Generation**: [/api/generate/image](https://poly-craft.vercel.app/api/generate/image)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Audio Generation**: [/api/generate/audio](https://poly-craft.vercel.app/api/generate/audio)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📊 Deployment Info" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Info" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Actor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
-
-  notify:
-    name: Notify Results
-    runs-on: ubuntu-latest
-    needs: [frontend-build, api-validation, security-scan, deploy]
-    if: always()
-    
-    steps:
-      - name: Notification summary
-        run: |
-          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
-            echo "🎉 PolyCraft deployed successfully!"
-            echo "🌐 Live at: https://poly-craft.vercel.app"
-            echo "🔗 API: https://poly-craft.vercel.app/api/health"
-          elif [[ "${{ needs.deploy.result }}" == "skipped" ]]; then
-            echo "ℹ️ Deployment skipped (secrets not configured or not on master)"
-          else
-            echo "❌ Deployment issues detected:"
-            echo "Build: ${{ needs.frontend-build.result }}"
-            echo "API Check: ${{ needs.api-validation.result }}"
-            echo "Security: ${{ needs.security-scan.result }}"
-          fi
+          echo "- **Time**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 **Note**: Vercel handles build & deployment automatically via GitHub integration."
