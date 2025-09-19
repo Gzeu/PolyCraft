@@ -3,14 +3,14 @@ builder = "NIXPACKS"
 watchPatterns = ["backend/**"]
 
 [deploy]
-startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+startCommand = "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
 
 [env]
 PORT = { default = "8000" }
 ENVIRONMENT = { default = "production" }
-BACKEND_API_KEY = { default = "polycraft_prod_secure_key_change_me" }
+BACKEND_API_KEY = { default = "polycraft_prod_wG2zMwZYFEQPN38C1AUMXS7oNr3sErzV_1758291171" }
 CORS_ORIGINS = { default = "https://poly-craft.vercel.app" }
 RATE_LIMIT_IMAGE = { default = "15" }
 RATE_LIMIT_TEXT = { default = "30" }
