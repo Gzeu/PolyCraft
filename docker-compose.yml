@@ -1,23 +1,6 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
   backend:
     build:
       context: ./backend
@@ -25,40 +8,73 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - NODE_ENV=development
+      - PORT=8000
+      - HOST=0.0.0.0
+      - BACKEND_API_KEY=${BACKEND_API_KEY:-}
+      - RATE_LIMIT_IMAGE=${RATE_LIMIT_IMAGE:-10}
+      - RATE_LIMIT_TEXT=${RATE_LIMIT_TEXT:-30}
+      - RATE_LIMIT_AUDIO=${RATE_LIMIT_AUDIO:-20}
+      - CACHE_TTL_IMAGE=${CACHE_TTL_IMAGE:-3600}
+      - CACHE_TTL_TEXT=${CACHE_TTL_TEXT:-300}
+      - CACHE_TTL_AUDIO=${CACHE_TTL_AUDIO:-3600}
     volumes:
       - ./backend:/app
-    depends_on:
-      - redis
-    networks:
-      - app-network
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
-  redis:
-    image: redis:7-alpine
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
-      - "6379:6379"
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3005
+      - NEXT_PUBLIC_API_KEY=${BACKEND_API_KEY:-}
+      - NEXT_TELEMETRY_DISABLED=1
     volumes:
-      - redis_data:/data
-    networks:
-      - app-network
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
       - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - backend
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  redis_data:
+  node_modules:
+  next_cache:
+
+networks:
+  default:
+    driver: bridge

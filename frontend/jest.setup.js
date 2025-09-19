@@ -37,12 +37,33 @@ jest.mock('next/router', () => ({
   },
 }))
 
+// Mock Next.js navigation
+jest.mock('next/navigation', () => ({
+  useRouter() {
+    return {
+      push: jest.fn(),
+      replace: jest.fn(),
+      prefetch: jest.fn(),
+      back: jest.fn(),
+      forward: jest.fn(),
+      refresh: jest.fn(),
+    }
+  },
+  useSearchParams() {
+    return new URLSearchParams()
+  },
+  usePathname() {
+    return '/'
+  }
+}))
+
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props) => {
+    const { src, alt, ...rest } = props
     // eslint-disable-next-line @next/next/no-img-element
-    return React.createElement('img', props)
+    return React.createElement('img', { src, alt, ...rest })
   },
 }))
 
@@ -52,8 +73,16 @@ jest.mock('framer-motion', () => ({
     div: ({ children, ...props }) => React.createElement('div', props, children),
     span: ({ children, ...props }) => React.createElement('span', props, children),
     img: ({ children, ...props }) => React.createElement('img', props, children),
+    button: ({ children, ...props }) => React.createElement('button', props, children),
+    h1: ({ children, ...props }) => React.createElement('h1', props, children),
+    h2: ({ children, ...props }) => React.createElement('h2', props, children),
+    p: ({ children, ...props }) => React.createElement('p', props, children),
   },
   AnimatePresence: ({ children }) => children,
+  useAnimation: () => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+  }),
 }))
 
 // Mock next-themes
@@ -62,7 +91,7 @@ jest.mock('next-themes', () => ({
     theme: 'dark',
     setTheme: jest.fn(),
     resolvedTheme: 'dark',
-    themes: ['light', 'dark'],
+    themes: ['light', 'dark', 'system'],
     systemTheme: 'dark',
   }),
   ThemeProvider: ({ children }) => children,
@@ -71,3 +100,40 @@ jest.mock('next-themes', () => ({
 // Setup global React for tests
 import React from 'react'
 global.React = React
+
+// Mock fetch
+global.fetch = jest.fn()
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+})
+
+// Mock IntersectionObserver
+class IntersectionObserver {
+  observe = jest.fn()
+  disconnect = jest.fn()
+  unobserve = jest.fn()
+}
+
+Object.defineProperty(window, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: IntersectionObserver,
+})
+
+Object.defineProperty(global, 'IntersectionObserver', {
+  writable: true,
+  configurable: true,
+  value: IntersectionObserver,
+})
