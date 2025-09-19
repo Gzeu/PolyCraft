@@ -1,7 +1,7 @@
-import { NextRequest } from "next/server";
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {

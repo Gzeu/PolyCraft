@@ -69,22 +69,34 @@ export async function POST(req: Request) {
             })
           });
           
-          if (!response.ok) {
+          if (response.status === 202) {
+            // Fallback response for audio
+            const data = await response.json();
+            results.push({
+              status: "fallback",
+              result: {
+                type: "audio",
+                message: "Audio generation temporarily unavailable",
+                text: data.text,
+                metadata: data.metadata
+              }
+            });
+          } else if (!response.ok) {
             const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
             throw new Error(errorData.error || `HTTP ${response.status}`);
+          } else {
+            const buffer = await response.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString("base64");
+            
+            results.push({
+              status: "success",
+              result: {
+                type: "audio",
+                audio_base64: base64,
+                content_type: response.headers.get("content-type") || "audio/wav"
+              }
+            });
           }
-          
-          const buffer = await response.arrayBuffer();
-          const base64 = Buffer.from(buffer).toString("base64");
-          
-          results.push({
-            status: "success",
-            result: {
-              type: "audio",
-              audio_base64: base64,
-              content_type: response.headers.get("content-type") || "audio/wav"
-            }
-          });
           
         } else if (item.type === "text") {
           const response = await fetch(`${origin}/api/generate/text`, {
