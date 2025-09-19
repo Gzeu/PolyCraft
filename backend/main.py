@@ -2,11 +2,12 @@ import os
 import time
 import json
 import httpx
-from fastapi import FastAPI, HTTPException, Depends, Request, status
+from fastapi import FastAPI, HTTPException, Depends, Request, status, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, HttpUrl
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Annotated
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from cache import cache
@@ -20,7 +21,11 @@ load_dotenv()
 
 # Rate limiting configuration
 limiter = Limiter(key_func=get_remote_address)
-app = FastAPI(title="Pollinations MCP Dashboard")
+app = FastAPI(
+    title="PolyCraft API",
+    description="AI-Powered Multi-Modal Generation Platform",
+    version="1.0.0"
+)
 
 # Apply rate limiting middleware
 app.state.limiter = limiter
@@ -35,6 +40,36 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Security
+security = HTTPBearer(auto_error=False)
+API_KEY = os.getenv("BACKEND_API_KEY")
+
+# Authentication dependency
+async def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+    """
+    Verify API key if BACKEND_API_KEY is configured.
+    If no API key is set in environment, allow open access.
+    """
+    if not API_KEY:
+        # No API key configured, allow open access
+        return True
+    
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if credentials.credentials != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return True
 
 # Models
 class GenerationRequest(BaseModel):
@@ -123,7 +158,7 @@ class PollinationsClient:
         # This is a temporary solution until we can get the Pollinations API working
         generated_text = (
             f"Here's a response to your request about: {prompt}\n\n"
-            "This is a static response from the MCP Dashboard. The text generation "
+            "This is a static response from PolyCraft. The text generation "
             "service is currently under maintenance. Please check back later for "
             "AI-generated content."
         )
@@ -157,12 +192,20 @@ class PollinationsClient:
 # Initialize client
 client = PollinationsClient()
 
-# API Endpoints
+# Health check endpoints (both /health and /api/health for compatibility)
+@app.get("/health")
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+# API Endpoints (protected by API key if configured)
 @app.post("/api/generate/image")
 @limiter.limit("10/minute")
 async def generate_image(
     request: Request,
-    generation_request: GenerationRequest
+    generation_request: GenerationRequest,
+    _: bool = Depends(verify_api_key)
 ):
     """
     Generate an image using Pollinations AI
@@ -193,7 +236,8 @@ async def generate_image(
 @limiter.limit("30/minute")
 async def generate_text(
     request: Request,
-    generation_request: GenerationRequest
+    generation_request: GenerationRequest,
+    _: bool = Depends(verify_api_key)
 ):
     """
     Generate text using Pollinations AI
@@ -214,7 +258,8 @@ async def generate_text(
 @limiter.limit("20/minute")
 async def generate_audio(
     request: Request,
-    audio_request: AudioRequest
+    audio_request: AudioRequest,
+    _: bool = Depends(verify_api_key)
 ):
     """
     Generate audio using Pollinations AI
@@ -237,7 +282,8 @@ async def generate_audio(
 @limiter.limit("5/minute")
 async def batch_generate(
     request: Request,
-    batch_request: BatchRequest
+    batch_request: BatchRequest,
+    _: bool = Depends(verify_api_key)
 ):
     """
     Batch process multiple generation requests
@@ -258,12 +304,6 @@ async def batch_generate(
             results.append({"status": "error", "error": str(e)})
     return {"results": results}
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
 # Error handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
@@ -283,7 +323,8 @@ async def global_exception_handler(request, exc):
 @app.on_event("startup")
 async def startup_event():
     """Initialize resources on startup"""
-    print("Starting up with in-memory cache...")
+    auth_status = "enabled" if API_KEY else "disabled"
+    print(f"Starting PolyCraft API with authentication {auth_status}...")
     # Initialize rate limiter
     app.state.limiter = limiter
 
