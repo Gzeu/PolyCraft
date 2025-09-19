@@ -1,6 +1,28 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-python-dotenv==0.19.0
-pollinations==4.5.1
-httpx==0.28.1
-slowapi==0.1.9
+# Core Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# HTTP Client
+httpx>=0.25.0
+requests>=2.31.0
+
+# Environment & Configuration
+python-dotenv>=1.0.0
+pydantic>=2.4.0
+pydantic-settings>=2.0.0
+
+# Rate Limiting & Caching
+slowapi>=0.1.9
+cachetools>=5.3.0
+
+# AI Integration
+pollinations>=4.5.1
+
+# Testing Dependencies (needed for CI)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Security & Middleware
+python-multipart>=0.0.6
+cors>=1.0.1
