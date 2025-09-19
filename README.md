@@ -2,7 +2,29 @@
 
 **Craft the Future with AI-Powered Multi-Modal Generation**
 
-## 📝 Table of Contents
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Gzeu/PolyCraft)
+
+## 🌟 Quick Deploy
+
+### Option 1: Vercel (Recommended)
+1. Click the "Deploy with Vercel" button above
+2. Set **Root Directory** to `frontend/`
+3. Add environment variable: `NEXT_PUBLIC_API_URL=https://your-backend-url.com`
+4. Deploy! 🚀
+
+### Option 2: Docker (Local)
+```bash
+git clone https://github.com/Gzeu/PolyCraft.git
+cd PolyCraft
+docker-compose up --build
+
+# Access at:
+# Frontend: http://localhost:3005
+# Backend: http://localhost:8000
+# API Docs: http://localhost:8000/docs
+```
+
+## 📋 Table of Contents
 - [Features](#-features)
 - [Quick Start](#-quick-start)
 - [Installation](#-installation)
@@ -390,28 +412,33 @@ npm test
 
 ## 🚀 Deployment
 
-### Vercel (Frontend)
+### Vercel (Frontend) - Recommended
 
-1. Push your code to a GitHub repository
-2. Import the project in Vercel
-3. Set the root directory to `frontend/`
-4. Set environment variables:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Gzeu/PolyCraft)
+
+1. Click the deploy button above or:
+2. Push your code to a GitHub repository
+3. Import the project in Vercel
+4. Set the root directory to `frontend/`
+5. Set environment variables:
 
    ```bash
    NEXT_PUBLIC_API_URL=https://your-backend-url.com
    ```
 
-5. Deploy!
+6. Deploy!
 
 ### Backend Deployment
 
 The backend can be deployed to any cloud provider that supports Python applications:
 
-- AWS Elastic Beanstalk
-- Google Cloud Run
-- Azure App Service
-- Heroku
-- Or any VPS with Docker support
+- **Railway** (Recommended)
+- **Render**
+- **AWS Elastic Beanstalk**
+- **Google Cloud Run**
+- **Azure App Service**
+- **Heroku**
+- **Or any VPS with Docker support**
 
 **Example Docker deployment:**
 
@@ -421,6 +448,8 @@ cd backend
 docker build -t polycraft-backend .
 docker run -p 8000:8000 -e BACKEND_API_KEY=your_key polycraft-backend
 ```
+
+📖 **Detailed Deployment Guide**: See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment instructions.
 
 ## 🤝 Contributing
 
