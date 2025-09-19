@@ -18,11 +18,8 @@ cachetools>=5.3.0
 # AI Integration
 pollinations>=4.5.1
 
-# Testing Dependencies (needed for CI)
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.1.0
-
 # Security & Middleware
 python-multipart>=0.0.6
-cors>=1.0.1
+
+# CORS
+fastapi[all]>=0.104.0
